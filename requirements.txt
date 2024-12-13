@@ -1,3 +1,5 @@
-flask
-requests
-openai
+flask==3.1.0
+requests==2.32.3
+pyngrok==5.2.2
+openai==1.57.4
+
