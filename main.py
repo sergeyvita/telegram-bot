@@ -1,34 +1,27 @@
 import logging
-import os
-import traceback
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import requests
 import openai
+import os
 
-# Настройка базового логирования
+# Настройки логирования
 logging.basicConfig(
     level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("app.log"),
-        logging.StreamHandler()
-    ]
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-# Проверка и настройка API ключей
+# Проверка и загрузка переменных окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     logging.error("Переменная BOT_TOKEN не установлена.")
     raise ValueError("Переменная BOT_TOKEN не установлена.")
-else:
-    logging.info("Переменная BOT_TOKEN успешно загружена.")
+logging.info("Переменная BOT_TOKEN успешно загружена.")
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 if not openai.api_key:
     logging.error("Переменная OPENAI_API_KEY не установлена.")
     raise ValueError("Переменная OPENAI_API_KEY не установлена.")
-else:
-    logging.info("Переменная OPENAI_API_KEY успешно загружена.")
+logging.info("Переменная OPENAI_API_KEY успешно загружена.")
 
 # Telegram API URL
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
@@ -63,7 +56,7 @@ def webhook():
         return "OK", 200
 
     except Exception as e:
-        logging.exception("Ошибка в обработке запроса вебхука:")
+        logging.error("Ошибка в обработке запроса:", exc_info=True)
         return "Internal Server Error", 500
 
 def send_message(chat_id, text):
@@ -74,37 +67,31 @@ def send_message(chat_id, text):
         response = requests.post(url, json=payload)
         logging.debug(f"Ответ Telegram: {response.json()}")
     except Exception as e:
-        logging.exception("Ошибка при отправке сообщения в Telegram:")
+        logging.error("Ошибка отправки сообщения:", exc_info=True)
 
 def get_chatgpt_response(prompt):
     try:
         assistant_instructions = (
             "Ты — профессиональный создатель контента для Телеграм-канала Ассоциации застройщиков. "
             "Создавай структурированные, продающие посты с использованием эмодзи на темы недвижимости, строительства, "
-            "законодательства и инвестиций. В конце каждого поста добавляй: \"Звоните \ud83d\udcf2 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).\""
+            "законодательства и инвестиций. В конце каждого поста добавляй: \"Звоните 📲 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).\""
         )
 
-        messages = [
-            {"role": "system", "content": assistant_instructions},
-            {"role": "user", "content": prompt},
-        ]
-
-        logging.debug(f"Отправляемые сообщения в OpenAI: {messages}")
-        response = openai.ChatCompletion.create(
+        response = openai.ChatCompletion.acreate(
             model="gpt-4",
-            messages=messages,
+            messages=[
+                {"role": "system", "content": assistant_instructions},
+                {"role": "user", "content": prompt},
+            ],
             max_tokens=1500,
             temperature=1.0,
         )
-        result = response["choices"][0]["message"]["content"].strip()
-        logging.debug(f"Ответ OpenAI: {result}")
-        return result
-
+        return response['choices'][0]['message']['content'].strip()
     except Exception as e:
-        logging.exception("Ошибка вызова OpenAI API:")
+        logging.error("Ошибка вызова OpenAI API:", exc_info=True)
         return "Извините, произошла ошибка при обработке вашего запроса."
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # Порт по умолчанию
+    port = int(os.environ.get("PORT", 8080))
     logging.info(f"Запуск приложения на порту {port}")
     app.run(host="0.0.0.0", port=port)
