@@ -3,6 +3,8 @@ import requests
 import openai
 import os
 import traceback
+import logging
+import sys
 
 # Настройки API ключей
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -19,6 +21,14 @@ TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 # Flask приложение
 app = Flask(__name__)
 
+# Настройка логирования
+logging.basicConfig(level=logging.DEBUG)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
+
 @app.route('/')
 def home():
     return "Сервер работает!", 200  # Проверочный маршрут для теста
@@ -27,12 +37,12 @@ def home():
 def webhook():
     try:
         data = request.json
-        print("Полученные данные от Telegram:", data)
+        app.logger.debug("Полученные данные от Telegram: %s", data)
 
         if "message" in data:
             chat_id = data["message"]["chat"]["id"]
             text = data["message"].get("text", "").strip()
-            print(f"Сообщение от {chat_id}: {text}")
+            app.logger.debug(f"Сообщение от {chat_id}: {text}")
 
             if text == "/start":
                 send_message(chat_id, "Добро пожаловать! Напишите мне что-нибудь, и я помогу создать пост для Telegram.")
@@ -45,7 +55,7 @@ def webhook():
         return "OK", 200
 
     except Exception as e:
-        print("Ошибка в обработке запроса:", traceback.format_exc())
+        app.logger.error("Ошибка в обработке запроса: %s", traceback.format_exc())
         return "Internal Server Error", 500
 
 def send_message(chat_id, text):
@@ -53,9 +63,9 @@ def send_message(chat_id, text):
     payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
     try:
         response = requests.post(url, json=payload)
-        print("Ответ Telegram:", response.json())
+        app.logger.debug("Ответ Telegram: %s", response.json())
     except Exception as e:
-        print("Ошибка отправки сообщения:", e)
+        app.logger.error("Ошибка отправки сообщения: %s", e)
 
 def get_chatgpt_response(prompt):
     try:
@@ -65,8 +75,7 @@ def get_chatgpt_response(prompt):
             "законодательства и инвестиций. В конце каждого поста добавляй: \"Звоните 📲 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).\""
         )
 
-        # Использование нового интерфейса OpenAI
-        response = openai.ChatCompletion.acreate(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": assistant_instructions},
@@ -77,7 +86,7 @@ def get_chatgpt_response(prompt):
         )
         return response["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        print("Ошибка вызова OpenAI API:", traceback.format_exc())
+        app.logger.error("Ошибка вызова OpenAI API: %s", traceback.format_exc())
         return f"Извините, произошла ошибка: {str(e)}"
 
 if __name__ == "__main__":
