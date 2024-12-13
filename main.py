@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request
 import requests
 import openai
 import os
@@ -21,7 +21,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Сервер работает!", 200  # Проверочный маршрут для тестаа
+    return "Сервер работает!", 200  # Проверочный маршрут для теста
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -48,7 +48,6 @@ def webhook():
         print("Ошибка в обработке запроса:", traceback.format_exc())
         return "Internal Server Error", 500
 
-
 def send_message(chat_id, text):
     url = f"{TELEGRAM_API_URL}/sendMessage"
     payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
@@ -58,13 +57,12 @@ def send_message(chat_id, text):
     except Exception as e:
         print("Ошибка отправки сообщения:", e)
 
-
 def get_chatgpt_response(prompt):
     try:
         assistant_instructions = (
             "Ты — профессиональный создатель контента для Телеграм-канала Ассоциации застройщиков. "
             "Создавай структурированные, продающие посты с использованием эмодзи на темы недвижимости, строительства, "
-            "законодательства и инвестиций. В конце каждого поста добавляй: \"Звоните \ud83d\udcf2 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).\""
+            "законодательства и инвестиций. В конце каждого поста добавляй: \"Звоните 📲 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).\""
         )
 
         response = openai.ChatCompletion.create(
@@ -79,7 +77,7 @@ def get_chatgpt_response(prompt):
         return response["choices"][0]["message"]["content"].strip()
     except Exception as e:
         print("Ошибка вызова OpenAI API:", traceback.format_exc())
-        return "Извините, произошла ошибка при обработке вашего запроса."
+        return f"Извините, произошла ошибка: {str(e)}"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))  # Порт по умолчанию
