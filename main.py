@@ -65,8 +65,9 @@ def get_chatgpt_response(prompt):
             "законодательства и инвестиций. В конце каждого поста добавляй: \"Звоните 📲 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).\""
         )
 
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
+        # Использование нового интерфейса OpenAI
+        response = openai.ChatCompletion.acreate(
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": assistant_instructions},
                 {"role": "user", "content": prompt},
