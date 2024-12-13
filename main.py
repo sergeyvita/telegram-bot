@@ -68,7 +68,7 @@ def get_chatgpt_response(prompt):
         )
 
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",  # Используйте актуальную модель
             messages=[
                 {"role": "system", "content": assistant_instructions},
                 {"role": "user", "content": prompt},
@@ -76,7 +76,7 @@ def get_chatgpt_response(prompt):
             max_tokens=1500,
             temperature=1.0,
         )
-        return response["choices"][0]["message"]["content"].strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         print("Ошибка вызова OpenAI API:", traceback.format_exc())
         return "Извините, произошла ошибка при обработке вашего запроса."
