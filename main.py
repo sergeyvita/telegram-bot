@@ -15,7 +15,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Сервер работает через ngrok!", 200
+    return "Сервер работаета через ngrok!", 200
 
 @app.route('/webhook', methods=['POST', 'GET'])
 def webhook():
