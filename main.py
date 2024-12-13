@@ -12,7 +12,7 @@ if not BOT_TOKEN:
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = ("OPENAI_API_KEY")
 if not openai.api_key:
     raise ValueError("Переменная OPENAI_API_KEY не установлена.")
 
@@ -95,7 +95,7 @@ def get_chatgpt_response(prompt):
         )
         return response["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        logger.error("Ошибка вызова OpenAI API:", exc_info=True)
+        print("Ошибка вызова OpenAI API:", traceback.format_exc())
         return "Извините, произошла ошибка при обработке вашего запроса."
 
 if __name__ == "__main__":
