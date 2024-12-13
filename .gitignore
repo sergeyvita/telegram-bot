@@ -1,0 +1,47 @@
+# Секретные файлы
+.env  # Файл с конфиденциальными данными, такими как токены API
+
+# Логи
+*.log  # Лог-файлы
+
+# Кеш и временные файлы Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Папка виртуального окружения
+venv/
+.venv/
+
+# Временные файлы и текстовые заметки
+*.txt
+*.sqlite3
+
+# Системные файлы
+.DS_Store  # macOS
+Thumbs.db  # Windows
+
+# Файлы IDE/редакторов
+.idea/
+.vscode/
+*.swp
+
+# Лишние файлы из вашего вывода
+24.3.1
+Build
+Checking
+Cloning
+Detected
+Docs
+Downloading
+New
+Running
+Transferred
+Uploading
+Using
+Your
+curl
+-r
+
+
