@@ -88,7 +88,7 @@ def send_message(chat_id, text):
 
 def get_chatgpt_response(prompt):
     """
-    Функция обработки запроса через OpenAI Chat API.
+    Функция для получения ответа от OpenAI API.
     """
     try:
         assistant_instructions = (
@@ -103,18 +103,20 @@ def get_chatgpt_response(prompt):
             {"role": "user", "content": prompt},
         ]
 
-        logger.debug(f"Запрос к OpenAI API: {messages}")
+        # Новый вызов OpenAI API
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4",  # Укажите модель
             messages=messages,
             max_tokens=1500,
             temperature=1.0,
         )
-        logger.debug("Успешный ответ от OpenAI API.")
-        return response["choices"][0]["message"]["content"].strip()
+
+        return response.choices[0].message["content"].strip()
+
     except Exception as e:
         logger.error("Ошибка вызова OpenAI API:", exc_info=True)
         return "Извините, произошла ошибка при обработке вашего запроса."
+
 
 if __name__ == "__main__":
     """
