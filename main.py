@@ -79,5 +79,7 @@ def send_message(chat_id, text):
     except Exception as e:
         print(f"Ошибка при отправке сообщения: {e}")  # Отладочные логи
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+from waitress import serve
+
+if __name__ == "__main__":
+    serve(app, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
