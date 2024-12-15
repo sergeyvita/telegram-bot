@@ -1,12 +1,14 @@
 import os
-from flask import Flask, request, jsonify
+import asyncio
+from aiohttp import web
 from dotenv import load_dotenv
 import openai
+import aiohttp
 
 # Загрузка переменных окружения из .env файла
 load_dotenv()
 
-# Переменные окружения :)
+# Переменные окружения
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
@@ -22,9 +24,6 @@ if not TELEGRAM_BOT_TOKEN or not OPENAI_API_KEY or not WEBHOOK_URL:
 # Установка API-ключа OpenAI
 openai.api_key = OPENAI_API_KEY
 
-# Создание Flask-приложения
-app = Flask(__name__)
-
 # PROMT для OpenAI
 PROMPT = (
     "Этот GPT выступает в роли профессионального создателя контента для Телеграм-канала Ассоциации застройщиков. "
@@ -38,17 +37,16 @@ PROMPT = (
     "которое также является гиперссылкой, ведущей на Телеграм-канал https://t.me/associationdevelopers."
 )
 
-@app.route('/', methods=['GET'])
-def home():
-    return "Сервис работает!"
+# Создание приложения Aiohttp
+app = web.Application()
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
+async def handle_home(request):
+    return web.Response(text="Сервис работает!")
+
+async def handle_webhook(request):
     try:
-        data = request.get_json()
+        data = await request.json()
         print(f"Получены данные от Telegram: {data}")  # Отладочный лог
-        if not data:
-            return jsonify({"status": "no data"}), 400
 
         if "message" in data:
             chat_id = data["message"]["chat"]["id"]
@@ -56,7 +54,8 @@ def webhook():
             print(f"Chat ID: {chat_id}, Message: {user_message}")
 
             # Генерация ответа через OpenAI
-            response = openai.ChatCompletion.create(
+            response = await asyncio.to_thread(
+                openai.ChatCompletion.create,
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": PROMPT},
@@ -65,25 +64,30 @@ def webhook():
             )
 
             reply = response['choices'][0]['message']['content']
-            send_message(chat_id, reply)
+            await send_message(chat_id, reply)
 
-        return jsonify({"status": "ok"}), 200
+        return web.json_response({"status": "ok"})
 
     except Exception as e:
         print(f"Ошибка обработки вебхука: {e}")
-        return jsonify({"error": str(e)}), 500
+        return web.json_response({"error": str(e)}, status=500)
 
-def send_message(chat_id, text):
+async def send_message(chat_id, text):
     try:
-        import requests
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         payload = {"chat_id": chat_id, "text": text}
-        response = requests.post(url, json=payload)
-        print(f"Ответ Telegram API: {response.json()}")  # Отладочные логи
-    except Exception as e:
-        print(f"Ошибка при отправке сообщения: {e}")  # Отладочные логи
 
-from waitress import serve
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload) as response:
+                result = await response.json()
+                print(f"Ответ Telegram API: {result}")
+    except Exception as e:
+        print(f"Ошибка при отправке сообщения: {e}")
+
+# Роуты приложения
+app.router.add_get('/', handle_home)
+app.router.add_post('/webhook', handle_webhook)
 
 if __name__ == "__main__":
-    serve(app, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+    port = int(os.getenv("PORT", 8080))
+    web.run_app(app, host="0.0.0.0", port=port)
