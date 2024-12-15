@@ -1,3 +1,4 @@
-web: waitress-serve --host=0.0.0.0 --port=$PORT main:app
+web: gunicorn -k "asyncio" -w 1 main:app
+
 
 
