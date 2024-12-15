@@ -1,2 +1,3 @@
-web: python3 main.py
+web: waitress-serve --port=$PORT main:app
+
 
