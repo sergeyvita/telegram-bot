@@ -1,14 +1,14 @@
 import os
 import logging
 from flask import Flask, request, jsonify
-from openai import OpenAI
-from openai.error import OpenAIError
+import openai  # Используем базовый модуль
+import requests
 
 # Настройка приложения Flask
 app = Flask(__name__)
 
 # Настройка OpenAI API
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -37,17 +37,16 @@ def webhook():
 
 def get_chatgpt_response(prompt):
     try:
-        response = client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
+        response = openai.ChatCompletion.create(
             model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
         )
-        return response.choices[0].message["content"]
-    except OpenAIError as e:
+        return response["choices"][0]["message"]["content"]
+    except openai.error.OpenAIError as e:
         logger.error(f"Ошибка подключения к OpenAI API: {e}")
         return "Произошла ошибка при обработке вашего запроса. Попробуйте позже."
 
 def send_telegram_message(chat_id, text):
-    import requests
     TELEGRAM_API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
     url = f"https://api.telegram.org/bot{TELEGRAM_API_TOKEN}/sendMessage"
     payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
