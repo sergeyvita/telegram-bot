@@ -46,11 +46,21 @@ def home():
 def webhook():
     try:
         data = request.get_json()
-        print(f"Получены данные от Telegram: {data}")  # Отладочные логи
+        print(f"Получены данные от Telegram: {data}")  # Отладочный лог
+        if not data:
+            return jsonify({"status": "no data"}), 400
 
         if "message" in data:
             chat_id = data["message"]["chat"]["id"]
             user_message = data["message"].get("text", "")
+            print(f"Chat ID: {chat_id}, Message: {user_message}")
+
+        return jsonify({"status": "ok"}), 200
+
+    except Exception as e:
+        print(f"Ошибка обработки вебхука: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
             # Генерация ответа через OpenAI
             response = openai.ChatCompletion.create(
