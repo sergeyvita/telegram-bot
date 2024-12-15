@@ -3,10 +3,12 @@ import logging
 from flask import Flask, request, jsonify
 import requests
 import openai
-import traceback
 
 # Настройка логирования
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 # Загрузка переменных окружения
@@ -19,8 +21,8 @@ if not BOT_TOKEN:
 if not OPENAI_API_KEY:
     raise ValueError("Переменная OPENAI_API_KEY не установлена.")
 
-# Настройка OpenAI API
 openai.api_key = OPENAI_API_KEY
+
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 # Инициализация Flask-приложения
@@ -39,7 +41,7 @@ def webhook():
 
         if not data or "message" not in data:
             logger.error("Некорректный запрос: отсутствует 'message' в payload.")
-            return jsonify({"error": "Некорректный запрос"}), 400
+            return "Некорректный запрос", 400
 
         chat_id = data["message"]["chat"]["id"]
         text = data["message"].get("text", "").strip()
@@ -48,23 +50,23 @@ def webhook():
         if text == "/start":
             send_message(chat_id, "Добро пожаловать! Напишите мне что-нибудь, и я помогу создать пост для Telegram.")
         elif text == "/help":
-            send_message(chat_id, "Список команд:\n/start - начать работу\n/help - помощь\nНапишите любой текст, чтобы я сгенерировал ответ.")
+            send_message(chat_id, "Список команд:\n/start - начать работу\n/help - помощь\nЛюбое другое сообщение будет обработано.")
         else:
             response = get_chatgpt_response(text)
             send_message(chat_id, response)
 
-        return jsonify({"ok": True}), 200
+        return "OK", 200
     except Exception as e:
         logger.error("Ошибка в обработке вебхука:", exc_info=True)
-        return jsonify({"error": "Internal Server Error"}), 500
+        return "Internal Server Error", 500
 
 def send_message(chat_id, text):
     url = f"{TELEGRAM_API_URL}/sendMessage"
     payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
     try:
+        logger.debug(f"Отправка сообщения в Telegram: {payload}")
         response = requests.post(url, json=payload)
         logger.debug(f"Ответ Telegram: {response.json()}")
-        response.raise_for_status()
     except Exception as e:
         logger.error("Ошибка отправки сообщения:", exc_info=True)
 
@@ -74,8 +76,7 @@ def get_chatgpt_response(prompt):
             "Ты — профессиональный создатель контента для Телеграм-канала Ассоциации застройщиков. "
             "Создавай структурированные, продающие посты с использованием эмодзи на темы недвижимости, строительства, "
             "законодательства и инвестиций. В конце каждого поста добавляй: "
-            "\"Звоните 📲 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).\""
-        )
+            "'Звоните \ud83d\udcde 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).'")
 
         response = openai.ChatCompletion.create(
             model="gpt-4",
@@ -84,19 +85,16 @@ def get_chatgpt_response(prompt):
                 {"role": "user", "content": prompt},
             ],
             max_tokens=1000,
-            temperature=0.7,
+            temperature=1.0,  # Устанавливаем температуру равной 1
         )
-        return response.choices[0].message["content"].strip()
+        return response["choices"][0]["message"]["content"].strip()
     except openai.error.OpenAIError as e:
         logger.error("Ошибка вызова OpenAI API:", exc_info=True)
         return "Извините, произошла ошибка при обработке вашего запроса."
-    except Exception as e:
-        logger.error("Непредвиденная ошибка:", exc_info=True)
-        return "Произошла неизвестная ошибка. Пожалуйста, попробуйте позже."
 
-# Проверка OpenAI API при запуске
+# Тестовое подключение к OpenAI при запуске сервера
 try:
-    openai.Model.list()
+    openai.Engine.list()
     logger.info("Успешное подключение к OpenAI API.")
 except Exception as e:
     logger.error("Ошибка подключения к OpenAI API:", exc_info=True)
