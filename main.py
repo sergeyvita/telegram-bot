@@ -13,8 +13,9 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-if not TELEGRAM_TOKEN or not OPENAI_API_KEY or not WEBHOOK_URL:
-    raise ValueError("One or more required environment variables are missing.")
+# Убедитесь, что эти переменные не равны None
+if not TELEGRAM_BOT_TOKEN or not OPENAI_API_KEY or not WEBHOOK_URL:
+    raise ValueError("Переменные окружения не загружены. Проверьте .env файл.")
 
 # Инициализация бота и Flask приложения
 app = Flask(__name__)
