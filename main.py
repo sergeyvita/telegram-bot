@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 import requests
 import openai
 
-# Настройка логирования
+# Настройка логирования :))
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
