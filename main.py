@@ -48,19 +48,13 @@ def webhook():
         logger.info(f"Сообщение от {chat_id}: {text}")
 
         if text == "/start":
-            send_message(
-                chat_id,
-                "Добро пожаловать! Напишите мне что-нибудь, и я помогу создать пост для Telegram."
-            )
+            send_message(chat_id, "Добро пожаловать! Напишите мне что-нибудь, и я помогу создать пост для Telegram.")
         elif text == "/help":
-            send_message(
-                chat_id,
-                "Список команд:\n/start - начать работу\n/help - помощь\nЛюбое другое сообщение будет обработано."
-            )
+            send_message(chat_id, "Список команд:\n/start - начать работу\n/help - помощь\nЛюбое другое сообщение будет обработано.")
         else:
-            logger.info(f"Отправляем сообщение на OpenAI для обработки: {text}")
+            logger.info(f"Отправка текста '{text}' в OpenAI API.")
             response = get_chatgpt_response(text)
-            logger.info(f"Ответ от OpenAI: {response}")
+            logger.info(f"Получен ответ от OpenAI: {response}")
             send_message(chat_id, response)
 
         return "OK", 200
@@ -72,9 +66,9 @@ def send_message(chat_id, text):
     url = f"{TELEGRAM_API_URL}/sendMessage"
     payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
     try:
-        logger.debug(f"Отправка сообщения в Telegram: {payload}")
+        logger.info(f"Отправка сообщения в Telegram: {payload}")
         response = requests.post(url, json=payload)
-        logger.debug(f"Ответ Telegram: {response.json()}")
+        logger.info(f"Ответ Telegram: {response.json()}")
     except Exception as e:
         logger.error("Ошибка отправки сообщения:", exc_info=True)
 
@@ -84,11 +78,10 @@ def get_chatgpt_response(prompt):
             "Ты — профессиональный создатель контента для Телеграм-канала Ассоциации застройщиков. "
             "Создавай структурированные, продающие посты с использованием эмодзи на темы недвижимости, строительства, "
             "законодательства и инвестиций. В конце каждого поста добавляй: "
-            "\"Звоните 📲 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).\""
+            "\"Звоните \ud83d\udcf2 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).\""
         )
 
-        logger.debug(f"Запрос к OpenAI: инструкция: {assistant_instructions}, сообщение: {prompt}")
-
+        logger.info(f"Отправка запроса в OpenAI: {prompt}")
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
@@ -98,16 +91,17 @@ def get_chatgpt_response(prompt):
             max_tokens=1000,
             temperature=1.0,
         )
-
-        logger.debug(f"Сырой ответ от OpenAI: {response}")
-        return response["choices"][0]["message"]["content"].strip()
+        result = response["choices"][0]["message"]["content"].strip()
+        logger.info(f"Ответ от OpenAI: {result}")
+        return result
     except openai.error.OpenAIError as e:
         logger.error("Ошибка вызова OpenAI API:", exc_info=True)
         return "Извините, произошла ошибка при обработке вашего запроса."
 
 # Тестовое подключение к OpenAI при запуске сервера
 try:
-    openai.Engine.list()  # Проверяем соединение с OpenAI
+    logger.info("Тестирование подключения к OpenAI API...")
+    openai.Model.list()
     logger.info("Успешное подключение к OpenAI API.")
 except Exception as e:
     logger.error("Ошибка подключения к OpenAI API:", exc_info=True)
