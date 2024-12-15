@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 import requests
 import openai
 
-# Настройка логирования :))
+# Настройка логирования
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -48,11 +48,19 @@ def webhook():
         logger.info(f"Сообщение от {chat_id}: {text}")
 
         if text == "/start":
-            send_message(chat_id, "Добро пожаловать! Напишите мне что-нибудь, и я помогу создать пост для Telegram.")
+            send_message(
+                chat_id,
+                "Добро пожаловать! Напишите мне что-нибудь, и я помогу создать пост для Telegram."
+            )
         elif text == "/help":
-            send_message(chat_id, "Список команд:\n/start - начать работу\n/help - помощь\nЛюбое другое сообщение будет обработано.")
+            send_message(
+                chat_id,
+                "Список команд:\n/start - начать работу\n/help - помощь\nЛюбое другое сообщение будет обработано."
+            )
         else:
+            logger.info(f"Отправляем сообщение на OpenAI для обработки: {text}")
             response = get_chatgpt_response(text)
+            logger.info(f"Ответ от OpenAI: {response}")
             send_message(chat_id, response)
 
         return "OK", 200
@@ -76,7 +84,10 @@ def get_chatgpt_response(prompt):
             "Ты — профессиональный создатель контента для Телеграм-канала Ассоциации застройщиков. "
             "Создавай структурированные, продающие посты с использованием эмодзи на темы недвижимости, строительства, "
             "законодательства и инвестиций. В конце каждого поста добавляй: "
-            "'Звоните \ud83d\udcde 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).'")
+            "\"Звоните 📲 8-800-550-23-93 или переходите по ссылке: [Ассоциация застройщиков](https://t.me/associationdevelopers).\""
+        )
+
+        logger.debug(f"Запрос к OpenAI: инструкция: {assistant_instructions}, сообщение: {prompt}")
 
         response = openai.ChatCompletion.create(
             model="gpt-4",
@@ -85,8 +96,10 @@ def get_chatgpt_response(prompt):
                 {"role": "user", "content": prompt},
             ],
             max_tokens=1000,
-            temperature=1.0,  # Устанавливаем температуру равной 1
+            temperature=1.0,
         )
+
+        logger.debug(f"Сырой ответ от OpenAI: {response}")
         return response["choices"][0]["message"]["content"].strip()
     except openai.error.OpenAIError as e:
         logger.error("Ошибка вызова OpenAI API:", exc_info=True)
@@ -94,7 +107,7 @@ def get_chatgpt_response(prompt):
 
 # Тестовое подключение к OpenAI при запуске сервера
 try:
-    openai.Engine.list()
+    openai.Engine.list()  # Проверяем соединение с OpenAI
     logger.info("Успешное подключение к OpenAI API.")
 except Exception as e:
     logger.error("Ошибка подключения к OpenAI API:", exc_info=True)
