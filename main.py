@@ -6,7 +6,7 @@ import openai
 # Загрузка переменных окружения из .env файла
 load_dotenv()
 
-# Переменные окружения
+# Переменные окружения :)
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
